@@ -1,12 +1,23 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-
+#include <time.h>
 
 #include "clock.h"
 
 
 typedef int data_t;
+
+typedef struct{
+    long length;
+    data_t *data;
+} vec_rec, *vec_ptr;
+
+
+vec_ptr new_vec( long len)
+{
+
+}
 
 data_t *create_vector_array(unsigned long size)
 {
@@ -20,6 +31,18 @@ data_t *create_vector_array(unsigned long size)
         array[i] = (data_t) rand() / (data_t)(RAND_MAX/ 100);
 
     return array;
+}
+
+struct timespec diff(struct timespec start, struct timespec end) {
+  struct timespec temp;
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  return temp;
 }
 
 float inner4(data_t *u, data_t *v, long length, data_t *dest)
@@ -52,16 +75,50 @@ void inner5(double *u, double *v, long length)
     }    
 }
 
+int getlength(){
+    return 0; 
+}
+
+float inner6(data_t *u, data_t *v, long length, data_t *dest)
+{
+    struct timespec start, end;
+    double time_used;
+    long i = 0;
+    data_t sum = 0; 
+    double cyc =0;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    for (i = 0; i < length;  i++ ) {
+      *dest = *dest + u[i] + v[i];
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+  
+    //float CPE = cyc/length;
+    struct timespec temp = diff(start, end);
+    time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
+
+ 
+    //printf("Time = %f\n", time_used);
+    cyc = time_used*1500000000;
+    float CPE = cyc/length;
+    printf("For %ld-Dimensional Vector Dot Product. Cycle = %f CPE = %f\n", length, cyc, CPE);
+    
+    return cyc;    
+}
+
 
 int main(){
 
-
+    char filename[3][20] = { "int_with_pointer", "int_without_pointer" };
     FILE *f = fopen("file_int_d_o3.txt", "w");
     if (f == NULL)  
     {
         printf("Error opening file!\n");
         exit(1);
     }    
+
+
     unsigned long eachTimes = 10; // test each vector dot product 10 times
     unsigned long dimRange  = 10000; // test dimension to 1000 
     
@@ -73,7 +130,7 @@ int main(){
             data_t *v = create_vector_array(i);
             data_t *dest = malloc(sizeof(data_t));
             *dest = 0;            
-            total_cycle = total_cycle + (long)inner4( u, v, i, dest);
+            total_cycle = total_cycle + (long)inner6( u, v, i, dest);
             free(u);
             free(v);
         }
@@ -109,3 +166,5 @@ int main(){
 
     return 0;
 }
+
+
