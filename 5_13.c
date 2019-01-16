@@ -6,6 +6,9 @@
 #include "clock.h"
 
 
+
+unsigned long eachTimes = 10; // test each vector dot product 10 times
+unsigned long dimRange  = 10000; // test dimension to 1000 
 typedef int data_t;
 
 typedef struct{
@@ -13,10 +16,123 @@ typedef struct{
     data_t *data;
 } vec_rec, *vec_ptr;
 
+struct timespec diff(struct timespec start, struct timespec end) {
+  struct timespec temp;
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  return temp;
+}
 
 vec_ptr new_vec( long len)
-{
+{   
+    vec_ptr vec = (vec_ptr)malloc(sizeof(vec_rec));
 
+    srand((unsigned int)time(NULL));
+    vec->data = malloc(len * sizeof(data_t));
+    
+    if (!vec->data)
+        return 0;
+
+    for (unsigned long i = 0; i < len; i++)
+        (vec->data)[i] = (data_t) rand() / (data_t)(RAND_MAX/ 100);
+
+    vec->length = len;
+    
+    return vec;
+}
+
+long getlength( vec_ptr vec){
+    return vec->length; 
+}
+
+data_t getelement(vec_ptr v, int i){
+    return v->data[i];
+}
+
+float inner1(vec_ptr u, vec_ptr v, long length, data_t *dest)
+{
+    struct timespec start, end;
+    double time_used;
+    data_t sum = 0; 
+    double cyc =0;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (long i = 0; i < getlength(u);  i++ ) {
+      data_t ele1 = getelement(u, i);
+      data_t ele2 = getelement(v, i);
+      *dest = *dest + ele1 + ele2;
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    struct timespec temp = diff(start, end);
+    time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
+
+    //printf("Time = %f\n", time_used);
+    cyc = time_used*1500000000;
+    float CPE = cyc/length;
+    printf("For %ld-Dimensional Vector Dot Product. Cycle = %f CPE = %f\n", length, cyc, CPE);
+    
+    return cyc;    
+}
+
+float inner2(vec_ptr u, vec_ptr v, long length, data_t *dest)
+{
+    struct timespec start, end;
+    double time_used;
+    data_t sum = 0; 
+    double cyc =0;
+    data_t* v1 = u->data;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (long i = 0; i < getlength(u);  i++ ) {
+      data_t ele2 = getelement(v, i);
+      *dest = *dest + v1[i] + ele2;
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    struct timespec temp = diff(start, end);
+    time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
+
+    //printf("Time = %f\n", time_used);
+    cyc = time_used*1500000000;
+    float CPE = cyc/length;
+    printf("For %ld-Dimensional Vector Dot Product. Cycle = %f CPE = %f\n", length, cyc, CPE);
+    
+    return cyc;    
+}
+
+float inner3(vec_ptr u, vec_ptr v, long length, data_t *dest)
+{
+    struct timespec start, end;
+    double time_used;
+    data_t sum = 0; 
+    double cyc =0;
+    data_t *v1 = u->data;
+    data_t *v2 = v->data;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    for (long i = 0; i < getlength(u);  i++ ) {
+      *dest = *dest + v1[i] + v2[i];
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+  
+    //float CPE = cyc/length;
+    struct timespec temp = diff(start, end);
+    time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
+
+ 
+    //printf("Time = %f\n", time_used);
+    cyc = time_used*1500000000;
+    float CPE = cyc/length;
+    printf("For %ld-Dimensional Vector Dot Product. Cycle = %f CPE = %f\n", length, cyc, CPE);
+    
+    return cyc;    
 }
 
 data_t *create_vector_array(unsigned long size)
@@ -33,17 +149,6 @@ data_t *create_vector_array(unsigned long size)
     return array;
 }
 
-struct timespec diff(struct timespec start, struct timespec end) {
-  struct timespec temp;
-  if ((end.tv_nsec-start.tv_nsec)<0) {
-    temp.tv_sec = end.tv_sec-start.tv_sec-1;
-    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-  } else {
-    temp.tv_sec = end.tv_sec-start.tv_sec;
-    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-  }
-  return temp;
-}
 
 float inner4(data_t *u, data_t *v, long length, data_t *dest)
 {
@@ -75,9 +180,7 @@ void inner5(double *u, double *v, long length)
     }    
 }
 
-int getlength(){
-    return 0; 
-}
+
 
 float inner6(data_t *u, data_t *v, long length, data_t *dest)
 {
@@ -106,8 +209,78 @@ float inner6(data_t *u, data_t *v, long length, data_t *dest)
     
     return cyc;    
 }
+int main(){
+    
+    
 
+    for(unsigned long i = 1; i <= dimRange; i++ ){
+        unsigned long long  total_cycle  = 0;
+        for(unsigned long j = 1; j <= eachTimes; j++){
+            
+            vec_ptr u = new_vec(i);
+            vec_ptr v = new_vec(i);
+            
+            data_t *dest = malloc(sizeof(data_t));
+            *dest = 0;            
+            total_cycle = total_cycle + (long)inner1( u, v, i, dest);
+            free(u->data);
+            free(v->data);
+        }
+        total_cycle = total_cycle/eachTimes;
+        
+    }
 
+    for(unsigned long i = 1; i <= dimRange; i++ ){
+        unsigned long long  total_cycle  = 0;
+        for(unsigned long j = 1; j <= eachTimes; j++){
+            
+            vec_ptr u = new_vec(i);
+            vec_ptr v = new_vec(i);
+            
+            data_t *dest = malloc(sizeof(data_t));
+            *dest = 0;            
+            total_cycle = total_cycle + (long)inner2( u, v, i, dest);
+            free(u->data);
+            free(v->data);
+        }
+        total_cycle = total_cycle/eachTimes;
+        
+    }
+
+    for(unsigned long i = 1; i <= dimRange; i++ ){
+        unsigned long long  total_cycle  = 0;
+        for(unsigned long j = 1; j <= eachTimes; j++){
+            
+            vec_ptr u = new_vec(i);
+            vec_ptr v = new_vec(i);
+            
+            data_t *dest = malloc(sizeof(data_t));
+            *dest = 0;            
+            total_cycle = total_cycle + (long)inner3( u, v, i, dest);
+            free(u->data);
+            free(v->data);
+        }
+        total_cycle = total_cycle/eachTimes;
+        
+    }
+    for(unsigned long i = 1; i <= dimRange; i++ ){
+        unsigned long long  total_cycle  = 0;
+        for(unsigned long j = 1; j <= eachTimes; j++){
+            
+            vec_ptr u = new_vec(i);
+            vec_ptr v = new_vec(i);
+            
+            data_t *dest = malloc(sizeof(data_t));
+            *dest = 0;            
+            total_cycle = total_cycle + (long)inner6( u->data, v->data, i, dest);
+            free(u->data);
+            free(v->data);
+        }
+        total_cycle = total_cycle/eachTimes;
+        
+    }
+}
+/*
 int main(){
 
     char filename[3][20] = { "int_with_pointer", "int_without_pointer" };
@@ -119,8 +292,7 @@ int main(){
     }    
 
 
-    unsigned long eachTimes = 10; // test each vector dot product 10 times
-    unsigned long dimRange  = 10000; // test dimension to 1000 
+
     
     for(unsigned long i = 1; i <= dimRange; i++ ){
         unsigned long long  total_cycle  = 0;
@@ -164,7 +336,8 @@ int main(){
     fclose(f);
     */
 
-    return 0;
-}
+//    return 0;
+//}
+
 
 
