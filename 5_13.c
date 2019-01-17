@@ -261,7 +261,7 @@ float inner6(data_t *u, data_t *v, long length, data_t *dest)
 int main(){
     
     
-    cpu_freq = 1600000000;
+    cpu_freq = 1500000000;
   
     FILE *f = fopen("original.txt", "w");
     for(unsigned long i = 1; i <= dimRange; i++ ){

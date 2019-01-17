@@ -10,7 +10,7 @@ run: 5_13
 	./5_13
 
 clean:
-	rm -f *.o 5_13 *.txt
+	rm -f *.o 5_13 *.txt result.png
 
 plot:
 	gnuplot plot.gp
